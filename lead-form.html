@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Aurelia Estates · Private Inquiry</title>
+<meta name="description" content="A private inquiry for the world's most distinguished residences. Share your search and an Aurelia advisor will be in touch, with absolute discretion." />
+<meta property="og:title" content="Aurelia Estates · Private Inquiry" />
+<meta property="og:description" content="A curated portfolio of the world's most distinguished residences, represented with absolute discretion." />
+<meta property="og:type" content="website" />
+<meta property="og:image" content="https://picsum.photos/seed/aurelia-estate-cover/1200/630?grayscale" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%230a0a0c'/%3E%3Crect x='8' y='8' width='48' height='48' fill='none' stroke='%23c9a86a' stroke-width='1.5'/%3E%3Ctext x='32' y='44' font-family='Georgia,serif' font-size='34' fill='%23c9a86a' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0a0a0c;
+    --panel: #131316;
+    --panel-2: #1a1a1e;
+    --panel-3: #202025;
+    --gold: #c9a86a;
+    --gold-soft: #e6d3a3;
+    --text: #ece9e3;
+    --muted: #8f8d92;
+    --muted-2: #6a6a70;
+    --line: rgba(201, 168, 106, 0.20);
+    --hairline: rgba(255, 255, 255, 0.07);
+    --danger: #d99a90;
+
+    /* one radius scale, documented: card 16 / controls 10 / pills full */
+    --r-card: 16px;
+    --r: 10px;
+
+    --shadow: 0 40px 120px rgba(0, 0, 0, 0.62), 0 8px 28px rgba(8, 6, 2, 0.5);
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Jost', sans-serif;
+    background:
+      radial-gradient(1200px 620px at 82% -12%, rgba(201,168,106,0.10), transparent 60%),
+      radial-gradient(900px 520px at -12% 112%, rgba(201,168,106,0.055), transparent 55%),
+      var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Fixed grain overlay -- breaks digital flatness without touching scroll perf */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    pointer-events: none;
+    opacity: 0.038;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .card {
+    width: 100%;
+    max-width: 1080px;
+    background: linear-gradient(180deg, var(--panel), #0e0e11);
+    border: 1px solid var(--line);
+    border-radius: var(--r-card);
+    box-shadow: var(--shadow);
+    display: grid;
+    grid-template-columns: 0.92fr 1.08fr;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(14px);
+    animation: cardIn 0.9s var(--ease) forwards;
+  }
+  @keyframes cardIn { to { opacity: 1; transform: translateY(0); } }
+
+  /* ============ Left brand panel ============ */
+  .brand {
+    position: relative;
+    padding: 52px 46px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 40px;
+    min-height: 640px;
+    isolation: isolate;
+    border-right: 1px solid var(--line);
+  }
+  /* Real grayscale architecture photography, kept moody under a gold-tinted scrim */
+  .brand::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    background:
+      url("https://picsum.photos/seed/aurelia-estate-architecture/1100/1500?grayscale") center/cover no-repeat;
+    transform: scale(1.04);
+    animation: slowZoom 22s ease-in-out infinite alternate;
+  }
+  .brand::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+      linear-gradient(180deg, rgba(10,10,12,0.62) 0%, rgba(10,10,12,0.80) 55%, rgba(10,10,12,0.94) 100%),
+      radial-gradient(700px 380px at 75% 8%, rgba(201,168,106,0.16), transparent 62%);
+  }
+  @keyframes slowZoom { to { transform: scale(1.12); } }
+
+  /* gold inner frame */
+  .brand-frame {
+    position: absolute;
+    inset: 16px;
+    border: 1px solid var(--line);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .logo { display: flex; align-items: center; gap: 13px; position: relative; }
+  .logo .mark {
+    width: 42px; height: 42px;
+    border: 1px solid var(--gold);
+    display: grid; place-items: center;
+    color: var(--gold);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 23px;
+    letter-spacing: 1px;
+    background: rgba(10,10,12,0.35);
+    backdrop-filter: blur(2px);
+  }
+  .logo .name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 25px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+  .logo .name small {
+    display: block;
+    font-family: 'Jost', sans-serif;
+    font-size: 9px;
+    letter-spacing: 5px;
+    color: var(--gold-soft);
+    margin-top: 4px;
+    opacity: 0.85;
+  }
+
+  .brand-copy { position: relative; }
+  .brand-copy .eyebrow {
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 18px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .brand-copy .eyebrow::before {
+    content: "";
+    width: 26px; height: 1px;
+    background: var(--gold);
+    opacity: 0.7;
+  }
+  .brand-copy h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 500;
+    font-size: clamp(40px, 5vw, 52px);
+    line-height: 1.04;
+    letter-spacing: 0.4px;
+    margin-bottom: 18px;
+    text-wrap: balance;
+  }
+  .brand-copy h1 em { color: var(--gold-soft); font-style: italic; }
+  .brand-copy p {
+    color: #cfccc4;
+    font-weight: 300;
+    line-height: 1.75;
+    font-size: 15px;
+    max-width: 36ch;
+    opacity: 0.92;
+  }
+
+  .brand-foot {
+    position: relative;
+    display: flex;
+    gap: 26px;
+  }
+  .brand-foot div { color: var(--muted); font-size: 11.5px; letter-spacing: 1.5px; }
+  .brand-foot strong {
+    display: block;
+    color: var(--text);
+    font-weight: 500;
+    font-size: 22px;
+    font-family: 'Cormorant Garamond', serif;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+  }
+
+  /* ============ Right form panel ============ */
+  .form-wrap { padding: 48px 48px 44px; position: relative; display: flex; flex-direction: column; }
+
+  .form-head { margin-bottom: 26px; }
+  .form-head h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 500;
+    font-size: 30px;
+    letter-spacing: 0.3px;
+  }
+  .form-head p { color: var(--muted); font-size: 13.5px; font-weight: 300; margin-top: 5px; }
+
+  /* progress rail */
+  .progress { display: flex; align-items: center; gap: 0; margin-bottom: 30px; }
+  .progress .node { display: flex; align-items: center; flex: 1; }
+  .progress .node:last-child { flex: 0; }
+  .dot {
+    --d: 26px;
+    width: var(--d); height: var(--d);
+    flex: 0 0 var(--d);
+    border-radius: 999px;
+    border: 1px solid var(--hairline);
+    display: grid; place-items: center;
+    font-size: 11px;
+    color: var(--muted-2);
+    background: var(--panel-2);
+    transition: all 0.4s var(--ease);
+    position: relative;
+  }
+  .dot span { transition: opacity 0.2s ease; }
+  .bar { flex: 1; height: 1px; background: var(--hairline); margin: 0 10px; position: relative; overflow: hidden; }
+  .bar::after {
+    content: ""; position: absolute; inset: 0;
+    background: var(--gold); transform: scaleX(0); transform-origin: left;
+    transition: transform 0.5s var(--ease);
+  }
+  .node.done .bar::after { transform: scaleX(1); }
+  .dot.active {
+    border-color: var(--gold);
+    color: #1a160c;
+    background: linear-gradient(180deg, var(--gold-soft), var(--gold));
+    box-shadow: 0 0 0 4px rgba(201,168,106,0.10);
+  }
+  .dot.done {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: rgba(201,168,106,0.10);
+  }
+
+  form { display: flex; flex-direction: column; flex: 1; }
+
+  /* steps */
+  .step { display: none; }
+  .step.active { display: block; animation: stepIn 0.5s var(--ease); }
+  @keyframes stepIn { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: translateX(0); } }
+  .step-label {
+    font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 20px; display: block;
+  }
+
+  .field { margin-bottom: 18px; }
+  .field label {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .field input,
+  .field textarea,
+  .field select {
+    width: 100%;
+    background: var(--panel-2);
+    border: 1px solid var(--hairline);
+    border-radius: var(--r);
+    padding: 14px 16px;
+    color: var(--text);
+    font-family: 'Jost', sans-serif;
+    font-size: 15px;
+    font-weight: 300;
+    transition: border-color .25s, box-shadow .25s, background .25s;
+  }
+  .field textarea { resize: vertical; min-height: 104px; }
+  .field input::placeholder, .field textarea::placeholder { color: #5a5a60; }
+  .field input:hover, .field textarea:hover, .field select:hover { border-color: rgba(255,255,255,0.14); }
+  .field input:focus, .field textarea:focus, .field select:focus {
+    outline: none;
+    border-color: var(--gold);
+    background: #1f1f25;
+    box-shadow: 0 0 0 3px rgba(201,168,106,0.12);
+  }
+  /* visible error state on validation */
+  .field input:user-invalid, .field select:user-invalid {
+    border-color: rgba(217,154,144,0.6);
+  }
+
+  .field select {
+    appearance: none; -webkit-appearance: none; cursor: pointer;
+    padding-right: 42px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23c9a86a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 16px center;
+  }
+  .field select option { background: var(--panel-2); color: var(--text); }
+  .field select:invalid { color: #5a5a60; }
+
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .field-row .field { margin-bottom: 0; }
+
+  /* segmented Buy / Rent */
+  .toggle {
+    display: grid; grid-template-columns: 1fr 1fr;
+    border: 1px solid var(--hairline);
+    border-radius: var(--r);
+    overflow: hidden;
+    background: var(--panel-2);
+  }
+  .toggle input { position: absolute; opacity: 0; pointer-events: none; }
+  .toggle label {
+    margin: 0; text-align: center; padding: 14px 10px;
+    font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--muted); cursor: pointer;
+    transition: color .2s, background .3s; user-select: none;
+  }
+  .toggle label + label { border-left: 1px solid var(--hairline); }
+  .toggle input:checked + label {
+    background: linear-gradient(180deg, var(--gold-soft), var(--gold));
+    color: #1a160c; font-weight: 500;
+  }
+  .toggle label:hover { color: var(--text); }
+  .toggle input:checked + label:hover { color: #1a160c; }
+  .toggle input:focus-visible + label { box-shadow: inset 0 0 0 2px rgba(201,168,106,0.5); }
+
+  /* nav buttons */
+  .actions { display: flex; gap: 12px; margin-top: 28px; }
+  .btn {
+    flex: 1;
+    padding: 16px;
+    border-radius: var(--r);
+    font-family: 'Jost', sans-serif;
+    font-size: 12.5px; font-weight: 500; letter-spacing: 2.5px; text-transform: uppercase;
+    cursor: pointer;
+    transition: transform .14s var(--ease), box-shadow .25s, background .25s, color .2s, border-color .2s;
+  }
+  .btn-primary {
+    border: none;
+    background: linear-gradient(180deg, var(--gold-soft), var(--gold));
+    color: #1a160c;
+    box-shadow: 0 12px 30px rgba(201,168,106,0.18);
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 16px 42px rgba(201,168,106,0.30); }
+  .btn-primary:active { transform: translateY(0) scale(0.99); }
+  .btn-ghost {
+    flex: 0 0 auto; min-width: 110px;
+    background: transparent;
+    border: 1px solid var(--hairline);
+    color: var(--muted);
+  }
+  .btn-ghost:hover { border-color: var(--gold); color: var(--gold-soft); }
+  .btn-ghost:active { transform: scale(0.99); }
+  .btn:disabled { opacity: .6; cursor: default; transform: none; }
+  .btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+  .form-note { text-align: center; color: var(--muted-2); font-size: 11.5px; font-weight: 300; margin-top: 18px; letter-spacing: .5px; }
+  .form-note svg { width: 12px; height: 12px; vertical-align: -1px; margin-right: 5px; stroke: var(--muted-2); }
+
+  .error-msg {
+    color: var(--danger);
+    font-size: 13px; margin-top: 16px; text-align: center;
+    display: none; line-height: 1.5;
+  }
+  .error-msg.show { display: block; }
+
+  /* ============ Success state ============ */
+  .success { display: none; flex-direction: column; align-items: center; text-align: center; padding: 56px 10px; }
+  .success.show { display: flex; animation: rise .7s var(--ease); }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+  .success .check {
+    width: 76px; height: 76px; border-radius: 50%;
+    border: 1px solid var(--gold); display: grid; place-items: center;
+    margin-bottom: 28px; box-shadow: 0 0 0 6px rgba(201,168,106,0.07);
+  }
+  .success .check svg { width: 34px; height: 34px; stroke: var(--gold); fill: none; stroke-width: 2; }
+  .success .check path { stroke-dasharray: 40; stroke-dashoffset: 40; animation: draw .8s var(--ease) .3s forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  .success h2 { font-family: 'Cormorant Garamond', serif; font-weight: 500; font-size: 32px; margin-bottom: 12px; }
+  .success p { color: var(--muted); font-weight: 300; max-width: 38ch; line-height: 1.75; }
+
+  /* ============ Responsive ============ */
+  @media (max-width: 860px) {
+    body { padding: 0; }
+    .card {
+      grid-template-columns: 1fr;
+      max-width: 560px;
+      border-radius: 0;
+      min-height: 100dvh;
+    }
+    .brand {
+      min-height: auto;
+      padding: 38px 30px 30px;
+      border-right: none;
+      border-bottom: 1px solid var(--line);
+      gap: 26px;
+    }
+    .brand-frame { inset: 12px; }
+    .brand-copy h1 { font-size: 34px; }
+    .brand-copy p { display: none; }       /* trim weight on small screens */
+    .brand-foot { gap: 22px; }
+    .brand-foot strong { font-size: 19px; }
+    .form-wrap { padding: 34px 26px 38px; }
+  }
+  @media (max-width: 400px) {
+    .field-row { grid-template-columns: 1fr; gap: 18px; }
+    .brand-foot div:last-child { display: none; }
+  }
+
+  /* ============ Reduced motion ============ */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    .card { opacity: 1; transform: none; }
+  }
+</style>
+</head>
+<body>
+  <main class="card">
+    <!-- Brand panel -->
+    <section class="brand">
+      <div class="brand-frame"></div>
+
+      <div class="logo">
+        <div class="mark">A</div>
+        <div class="name">Aurelia<small>Private Estates</small></div>
+      </div>
+
+      <div class="brand-copy">
+        <span class="eyebrow">By Appointment Only</span>
+        <h1>Find your <em>extraordinary</em> address.</h1>
+        <p>A curated portfolio of the world's most distinguished residences, represented with absolute discretion.</p>
+      </div>
+
+      <div class="brand-foot">
+        <div><strong>$4.2B</strong>in sales</div>
+        <div><strong>27</strong>global markets</div>
+        <div><strong>1924</strong>established</div>
+      </div>
+    </section>
+
+    <!-- Form panel -->
+    <section class="form-wrap">
+      <div class="form-head" id="formHead">
+        <h2>Request a consultation</h2>
+        <p>A few details, and one of our advisors will reach out.</p>
+      </div>
+
+      <!-- progress -->
+      <div class="progress" id="progress" aria-hidden="true">
+        <div class="node" data-node="0"><div class="dot active" data-dot="0"><span>1</span></div><div class="bar"></div></div>
+        <div class="node" data-node="1"><div class="dot" data-dot="1"><span>2</span></div><div class="bar"></div></div>
+        <div class="node" data-node="2"><div class="dot" data-dot="2"><span>3</span></div></div>
+      </div>
+
+      <form id="leadForm" novalidate>
+        <!-- Step 1 -- contact -->
+        <fieldset class="step active" data-step="0">
+          <span class="step-label">Your details</span>
+          <div class="field">
+            <label for="name">Full name</label>
+            <input type="text" id="name" name="name" placeholder="Alexandra Whitmore" required />
+          </div>
+          <div class="field">
+            <label for="email">Email address</label>
+            <input type="email" id="email" name="email" placeholder="you@example.com" required />
+          </div>
+          <div class="field">
+            <label for="phone">Phone</label>
+            <input type="tel" id="phone" name="phone" placeholder="+1 (555) 000 0000" required />
+          </div>
+          <div class="field">
+            <label for="telegram">Telegram</label>
+            <input type="text" id="telegram" name="telegram" placeholder="@username (optional)" />
+          </div>
+        </fieldset>
+
+        <!-- Step 2 -- search -->
+        <fieldset class="step" data-step="1">
+          <span class="step-label">Your search</span>
+          <div class="field">
+            <label>Property type</label>
+            <div class="toggle">
+              <input type="radio" id="type-buy" name="propertyType" value="Buy" checked />
+              <label for="type-buy">Buy</label>
+              <input type="radio" id="type-rent" name="propertyType" value="Rent" />
+              <label for="type-rent">Rent</label>
+            </div>
+          </div>
+          <div class="field">
+            <label for="budget">Budget range</label>
+            <select id="budget" name="budget" required>
+              <option value="" disabled selected hidden>Select a budget range</option>
+              <option value="Under 100,000">Under €100,000</option>
+              <option value="100,000 to 250,000">€100,000 to €250,000</option>
+              <option value="250,000 to 500,000">€250,000 to €500,000</option>
+              <option value="500,000 to 1,000,000">€500,000 to €1,000,000</option>
+              <option value="Over 1,000,000">Over €1,000,000</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="location">Location / city</label>
+            <input type="text" id="location" name="location" placeholder="Monaco, Paris, Marbella" required />
+          </div>
+        </fieldset>
+
+        <!-- Step 3 -- specifics -->
+        <fieldset class="step" data-step="2">
+          <span class="step-label">Specifics</span>
+          <div class="field-row">
+            <div class="field">
+              <label for="bedrooms">Bedrooms</label>
+              <select id="bedrooms" name="bedrooms" required>
+                <option value="" disabled selected hidden>Select</option>
+                <option value="Studio">Studio</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5+">5+</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="timeline">Timeline</label>
+              <select id="timeline" name="timeline" required>
+                <option value="" disabled selected hidden>Select</option>
+                <option value="Immediately">Immediately</option>
+                <option value="Within 1 month">Within 1 month</option>
+                <option value="1 to 3 months">1 to 3 months</option>
+                <option value="3 to 6 months">3 to 6 months</option>
+                <option value="Just browsing">Just browsing</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label for="message">How may we assist?</label>
+            <textarea id="message" name="message" placeholder="Tell us about the residence you envision."></textarea>
+          </div>
+        </fieldset>
+
+        <!-- actions -->
+        <div class="actions">
+          <button type="button" class="btn btn-ghost" id="backBtn" style="display:none">Back</button>
+          <button type="button" class="btn btn-primary" id="nextBtn">Continue</button>
+          <button type="submit" class="btn btn-primary" id="submitBtn" style="display:none">Submit inquiry</button>
+        </div>
+
+        <p class="form-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Your information is held in the strictest confidence.
+        </p>
+        <p class="error-msg" id="errorMsg">Something went wrong. Please try again.</p>
+      </form>
+
+      <!-- Success state -->
+      <div class="success" id="success" role="status" aria-live="polite">
+        <div class="check">
+          <svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" /></svg>
+        </div>
+        <h2>Thank you.</h2>
+        <p>Your inquiry has reached us. An Aurelia advisor will be in touch shortly.</p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    /* =====================================================================
+       ⚙️  EDIT THIS ONE LINE ONLY
+       Paste your ngrok https URL here (keep the /webhook/lead path).
+       Example: const WEBHOOK_URL = "https://abc123.ngrok-free.app/webhook/lead";
+       ===================================================================== */
+    const WEBHOOK_URL = "https://YOUR-N8N-HOST/webhook/lead";
+    /* ===================================================================== */
+
+    const form = document.getElementById('leadForm');
+    const success = document.getElementById('success');
+    const errorMsg = document.getElementById('errorMsg');
+    const formHead = document.getElementById('formHead');
+    const progress = document.getElementById('progress');
+
+    const backBtn = document.getElementById('backBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const submitBtn = document.getElementById('submitBtn');
+
+    const steps = Array.from(form.querySelectorAll('.step'));
+    const dots = Array.from(progress.querySelectorAll('[data-dot]'));
+    const nodes = Array.from(progress.querySelectorAll('[data-node]'));
+    let current = 0;
+
+    // --- step navigation -------------------------------------------------
+    function render() {
+      steps.forEach((s, i) => s.classList.toggle('active', i === current));
+      dots.forEach((d, i) => {
+        d.classList.toggle('active', i === current);
+        d.classList.toggle('done', i < current);
+      });
+      nodes.forEach((n, i) => n.classList.toggle('done', i < current));
+
+      const last = current === steps.length - 1;
+      backBtn.style.display = current === 0 ? 'none' : '';
+      nextBtn.style.display = last ? 'none' : '';
+      submitBtn.style.display = last ? '' : 'none';
+    }
+
+    // Validate only the inputs inside the current step
+    function validateStep(i) {
+      const fields = steps[i].querySelectorAll('input, select, textarea');
+      for (const f of fields) {
+        if (!f.checkValidity()) { f.reportValidity(); return false; }
+      }
+      return true;
+    }
+
+    nextBtn.addEventListener('click', () => {
+      if (!validateStep(current)) return;
+      errorMsg.classList.remove('show');
+      current = Math.min(current + 1, steps.length - 1);
+      render();
+    });
+
+    backBtn.addEventListener('click', () => {
+      errorMsg.classList.remove('show');
+      current = Math.max(current - 1, 0);
+      render();
+    });
+
+    render();
+
+    // --- submit ----------------------------------------------------------
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorMsg.classList.remove('show');
+
+      // Full validation across every step before sending
+      for (let i = 0; i < steps.length; i++) {
+        if (!validateStep(i)) { current = i; render(); return; }
+      }
+
+      const payload = {
+        name: form.name.value.trim(),
+        email: form.email.value.trim(),
+        phone: form.phone.value.trim(),
+        telegram: form.telegram.value.trim() || null,
+        propertyType: form.propertyType.value,
+        budget: form.budget.value,
+        location: form.location.value.trim(),
+        bedrooms: form.bedrooms.value,
+        timeline: form.timeline.value,
+        message: form.message.value.trim(),
+        submittedAt: new Date().toISOString()
+      };
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Sending';
+
+      try {
+        if (WEBHOOK_URL.startsWith('NGROK_URL_HERE')) {
+          throw new Error('config'); // WEBHOOK_URL hasn't been set yet
+        }
+
+        const res = await fetch(WEBHOOK_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            // Skip ngrok's free-tier browser interstitial so the request reaches n8n
+            'ngrok-skip-browser-warning': 'true'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error('Request failed: ' + res.status);
+
+        // Reveal success state
+        form.style.display = 'none';
+        progress.style.display = 'none';
+        formHead.style.display = 'none';
+        success.classList.add('show');
+      } catch (err) {
+        console.error(err);
+
+        if (err.message === 'config') {
+          errorMsg.textContent = 'This form is not connected yet. Please try again later.';
+        } else if (err instanceof TypeError) {
+          // fetch throws a TypeError when the server is unreachable / offline
+          errorMsg.textContent = 'We could not reach our server. Please check your connection and try again.';
+        } else {
+          errorMsg.textContent = 'Something went wrong on our end. Please try again in a moment.';
+        }
+        errorMsg.classList.add('show');
+
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit inquiry';
+      }
+    });
+  </script>
+</body>
+</html>
