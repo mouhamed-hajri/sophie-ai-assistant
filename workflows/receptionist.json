@@ -1,0 +1,359 @@
+{
+ "name": "receptionist",
+ "nodes": [
+  {
+   "parameters": {
+    "httpMethod": "POST",
+    "path": "lead",
+    "options": {}
+   },
+   "type": "n8n-nodes-base.webhook",
+   "typeVersion": 2.1,
+   "position": [
+    0,
+    16
+   ],
+   "id": "0bb2e286-2b89-41a7-b8e9-d1234c9aca82",
+   "name": "Webhook",
+   "webhookId": "a0690e1b-7b40-42fb-a6c9-a0dd32369bba"
+  },
+  {
+   "parameters": {
+    "promptType": "define",
+    "text": "=You are a senior real estate lead qualification analyst. Score the lead below using the EXACT algorithm provided. Be deterministic and consistent — the same input must always produce the same score. Do not improvise weights or invent values.\n\n=========================\nLEAD DATA\n=========================\nName:           {{ $json.body.name }}\nProperty Type:  {{ $json.body.propertyType }}\nBudget Range:   {{ $json.body.budget }}\nLocation/City:  {{ $json.body.location }}\nBedrooms:       {{ $json.body.bedrooms }}\nTimeline:       {{ $json.body.timeline }}\nMessage:        {{ $json.body.message }}\n\n=========================\nSCORING ALGORITHM\n=========================\nCompute four component sub-scores (each 0–100), apply the weights, then apply keyword adjustments. Round to the nearest whole number and clamp the final result to 0–100.\n\n1) TIMELINE — weight 40%\n   Immediately      = 100\n   Within 1 month   = 85\n   1-3 months       = 60\n   3-6 months       = 35\n   Just browsing    = 10\n   (blank/unknown)  = 30\n\n2) BUDGET — weight 30%\n   Over €1M         = 100\n   €500k-€1M        = 85\n   €250k-€500k      = 65\n   €100k-€250k      = 45\n   Under €100k      = 25\n   (blank/unknown)  = 30\n   NOTE: If Property Type is \"Rent\", treat the budget tier as monthly rent intent — keep the same point values (higher budget still = stronger lead).\n\n3) COMPLETENESS — weight 20%\n   These 7 fields count: Name, Property Type, Budget, Location, Bedrooms, Timeline, Message.\n   A field counts as \"filled\" only if it has a real, non-empty value.\n   Score = (number of filled fields / 7) × 100.\n\n4) MESSAGE QUALITY — weight 10%\n   Empty / blank                                                = 0\n   Generic or one-liner, no specifics (e.g. \"interested\")       = 40\n   Some specifics (a need, a feature, a constraint)             = 70\n   Detailed & concrete (clear requirements, motivation, budget  = 100\n     confirmation, financing readiness, specific area/property)\n\nBASE SCORE = (Timeline × 0.40) + (Budget × 0.30) + (Completeness × 0.20) + (MessageQuality × 0.10)\n\nKEYWORD ADJUSTMENTS (apply to BASE SCORE, then clamp to 0–100):\n   +10 if the Message contains any urgency keyword (case-insensitive):\n       \"urgent\", \"immediately\", \"asap\", \"quickly\"\n   -15 if the Message contains any low-intent keyword (case-insensitive):\n       \"just browsing\", \"maybe\", \"not sure\"\n   Both can apply (net -5). Count each rule at most once regardless of how many matching words appear.\n\nFINAL SCORE = clamp( round(BASE SCORE + adjustments), 0, 100 )\n\n=========================\nTIER / LABEL / PRIORITY MAP\n=========================\nScore 80-100 -> TIER A | LABEL Hot Lead  | PRIORITY Call within 1 hour\nScore 60-79  -> TIER B | LABEL Warm Lead | PRIORITY Call today\nScore 40-59  -> TIER C | LABEL Cool Lead | PRIORITY Call this week\nScore 0-39   -> TIER D | LABEL Cold Lead | PRIORITY Nurture only\n\n=========================\nOUTPUT — return EXACTLY this format, nothing before or after, no markdown, no code fences:\n=========================\nSCORE: [0-100]\nTIER: [A/B/C/D]\nLABEL: [Hot Lead / Warm Lead / Cool Lead / Cold Lead]\nPRIORITY: [Call within 1 hour / Call today / Call this week / Nurture only]\nSUMMARY: [exactly 2 sentences written for the agent: who they are, what they want, and why this score]\nNEXT_ACTION: [one specific recommended action tailored to this lead — reference their location, property type, timeline, or budget]\n\nHow it works / notes\n\n- Weighting is exactly as specified — timeline 40 / budget 30 / completeness 20 / message quality 10, combined into a 0–100 base, then the ±keyword adjustments are applied and clamped.\n- Determinism: I gave the model fixed point tables instead of letting it \"feel out\" a score, so the same lead always yields the same number. For maximum consistency, set the node's temperature to 0 in the model settings.\n- Blank handling: unknown timeline/budget default to 30 (mild penalty, not a zero) so a half-filled form doesn't crater unfairly — completeness already penalizes missing fields separately.\n- Rent vs Buy: I added a line so rental budgets are read as monthly-rent intent rather than being misjudged against purchase prices. Tell me if you'd rather rentals use a different budget table.\n- Output is parser-friendly: strict KEY: value lines, no markdown — easy to split in a downstream n8n Set/Code node (e.g. split on \\n, then :).",
+    "batching": {}
+   },
+   "type": "@n8n/n8n-nodes-langchain.chainLlm",
+   "typeVersion": 1.9,
+   "position": [
+    208,
+    16
+   ],
+   "id": "776be6a4-40ed-41fc-91ab-e799b1ead954",
+   "name": "Basic LLM Chain"
+  },
+  {
+   "parameters": {
+    "model": "llama-3.3-70b-versatile",
+    "options": {}
+   },
+   "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+   "typeVersion": 1,
+   "position": [
+    144,
+    224
+   ],
+   "id": "1ba4796e-ffd2-466b-914d-835b801cd0e2",
+   "name": "Groq Chat Model",
+   "credentials": {
+    "groqApi": {
+     "id": "",
+     "name": "YOUR_GROQAPI"
+    }
+   }
+  },
+  {
+   "parameters": {
+    "operation": "append",
+    "documentId": {
+     "__rl": true,
+     "value": "YOUR_GOOGLE_SHEET_ID",
+     "mode": "list",
+     "cachedResultName": "Real Estate Leads",
+     "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+    },
+    "sheetName": {
+     "__rl": true,
+     "value": "gid=0",
+     "mode": "list",
+     "cachedResultName": "Sheet1",
+     "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=0"
+    },
+    "columns": {
+     "mappingMode": "defineBelow",
+     "value": {
+      "Date": "={{ $now }}",
+      "Name": "={{ $('Webhook').item.json.body.name }}",
+      "Email": "={{ $('Webhook').item.json.body.email }}",
+      "Phone": "={{ $('Webhook').item.json.body.phone }}",
+      "Budget": "={{ $('Webhook').item.json.body.budget }}",
+      "Location": "={{ $('Webhook').item.json.body.location }}",
+      "Type": "={{ $('Webhook').item.json.body.propertyType }}",
+      "Timeline": "={{ $('Webhook').item.json.body.timeline }}",
+      "Score": "={{ $('Basic LLM Chain').item.json.text.match(/SCORE: (.+)/)?.[1]?.trim() }}",
+      "Summary": "={{ $('Basic LLM Chain').item.json.text.match(/SUMMARY: (.+)/)?.[1]?.trim() }}",
+      "Tier": "={{ $('Basic LLM Chain').item.json.text.match(/TIER: (.+)/)?.[1]?.trim() }}",
+      "Label": "={{ $('Basic LLM Chain').item.json.text.match(/LABEL: (.+)/)?.[1]?.trim() }}",
+      "Priority": "={{ $('Basic LLM Chain').item.json.text.match(/PRIORITY: (.+)/)?.[1]?.trim() }}",
+      "Next Action": "={{ $('Basic LLM Chain').item.json.text.match(/NEXT_ACTION: (.+)/)?.[1]?.trim() }}",
+      "Telegram": "={{ $('Webhook').item.json.body.telegram }}"
+     },
+     "matchingColumns": [],
+     "schema": [
+      {
+       "id": "Date",
+       "displayName": "Date",
+       "required": false,
+       "defaultMatch": false,
+       "display": true,
+       "type": "string",
+       "canBeUsedToMatch": true
+      },
+      {
+       "id": "Name",
+       "displayName": "Name",
+       "required": false,
+       "defaultMatch": false,
+       "display": true,
+       "type": "string",
+       "canBeUsedToMatch": true
+      },
+      {
+       "id": "Email",
+       "displayName": "Email",
+       "required": false,
+       "defaultMatch": false,
+       "display": true,
+       "type": "string",
+       "canBeUsedToMatch": true
+      },
+      {
+       "id": "Phone",
+       "displayName": "Phone",
+       "required": false,
+       "defaultMatch": false,
+       "display": true,
+       "type": "string",
+       "canBeUsedToMatch": true
+      },
+      {
+       "id": "Budget",
+       "displayName": "Budget",
+       "required": false,
+       "defaultMatch": false,
+       "display": true,
+       "type": "string",
+       "canBeUsedToMatch": true
+      },
+      {
+       "id": "Location",
+       "displayName": "Location",
+       "required": false,
+       "defaultMatch": false,
+       "display": true,
+       "type": "string",
+       "canBeUsedToMatch": true
+      },
+      {
+       "id": "Type",
+       "displayName": "Type",
+       "required": false,
+       "defaultMatch": false,
+       "display": true,
+       "type": "string",
+       "canBeUsedToMatch": true
+      },
+      {
+       "id": "Timeline",
+       "displayName": "Timeline",
+       "required": false,
+       "defaultMatch": false,
+       "display": true,
+       "type": "string",
+       "canBeUsedToMatch": true
+      },
+      {
+       "id": "Telegram",
+       "displayName": "Telegram",
+       "required": false,
+       "defaultMatch": false,
+       "display": true,
+       "type": "string",
+       "canBeUsedToMatch": true,
+       "removed": false
+      },
+      {
+       "id": "Score",
+       "displayName": "Score",
+       "required": false,
+       "defaultMatch": false,
+       "display": true,
+       "type": "string",
+       "canBeUsedToMatch": true,
+       "removed": false
+      },
+      {
+       "id": "Tier",
+       "displayName": "Tier",
+       "required": false,
+       "defaultMatch": false,
+       "display": true,
+       "type": "string",
+       "canBeUsedToMatch": true,
+       "removed": false
+      },
+      {
+       "id": "Label",
+       "displayName": "Label",
+       "required": false,
+       "defaultMatch": false,
+       "display": true,
+       "type": "string",
+       "canBeUsedToMatch": true,
+       "removed": false
+      },
+      {
+       "id": "Priority",
+       "displayName": "Priority",
+       "required": false,
+       "defaultMatch": false,
+       "display": true,
+       "type": "string",
+       "canBeUsedToMatch": true,
+       "removed": false
+      },
+      {
+       "id": "Next Action",
+       "displayName": "Next Action",
+       "required": false,
+       "defaultMatch": false,
+       "display": true,
+       "type": "string",
+       "canBeUsedToMatch": true,
+       "removed": false
+      },
+      {
+       "id": "Summary",
+       "displayName": "Summary",
+       "required": false,
+       "defaultMatch": false,
+       "display": true,
+       "type": "string",
+       "canBeUsedToMatch": true,
+       "removed": false
+      }
+     ],
+     "attemptToConvertTypes": false,
+     "convertFieldsToString": false
+    },
+    "options": {}
+   },
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.7,
+   "position": [
+    560,
+    16
+   ],
+   "id": "9fb4e8e6-fb93-45df-8347-82400bed4b05",
+   "name": "Append row in sheet",
+   "credentials": {
+    "googleSheetsOAuth2Api": {
+     "id": "",
+     "name": "YOUR_GOOGLESHEETSOAUTH2API"
+    }
+   }
+  },
+  {
+   "parameters": {
+    "sendTo": "you@example.com",
+    "subject": "=🔥 New Lead: {{ $('Webhook').item.json.body.name }} - {{ $('Basic LLM Chain').item.json.text.match(/LABEL: (.+)/)?.[1]?.trim() }}",
+    "emailType": "text",
+    "message": "=New lead received!\n\nName: {{ $('Webhook').item.json.body.name }}\nEmail: {{ $('Webhook').item.json.body.email }}\nPhone: {{ $('Webhook').item.json.body.phone }}\n\nProperty Type: {{ $('Webhook').item.json.body.propertyType }}\nBudget: {{ $('Webhook').item.json.body.budget }}\nLocation: {{ $('Webhook').item.json.body.location }}\nBedrooms: {{ $('Webhook').item.json.body.bedrooms }}\nTimeline: {{ $('Webhook').item.json.body.timeline }}\n\nScore: {{ $('Basic LLM Chain').item.json.text.match(/SCORE: (.+)/)?.[1]?.trim() }}\nTier: {{ $('Basic LLM Chain').item.json.text.match(/TIER: (.+)/)?.[1]?.trim() }}\nLabel: {{ $('Basic LLM Chain').item.json.text.match(/LABEL: (.+)/)?.[1]?.trim() }}\nPriority: {{ $('Basic LLM Chain').item.json.text.match(/PRIORITY: (.+)/)?.[1]?.trim() }}\n\nNext Action: {{ $('Basic LLM Chain').item.json.text.match(/NEXT_ACTION: (.+)/)?.[1]?.trim() }}\n\nSummary: {{ $('Basic LLM Chain').item.json.text.match(/SUMMARY: (.+)/)?.[1]?.trim() }}\n\n---\nThis email was sent automatically with n8n",
+    "options": {}
+   },
+   "type": "n8n-nodes-base.gmail",
+   "typeVersion": 2.2,
+   "position": [
+    560,
+    176
+   ],
+   "id": "2c9e6304-f113-4269-ac1d-004b21984426",
+   "name": "Send a message",
+   "webhookId": "bdf3f58e-659f-434b-a1b6-9037d7d1441b",
+   "credentials": {
+    "gmailOAuth2": {
+     "id": "",
+     "name": "YOUR_GMAILOAUTH2"
+    }
+   }
+  },
+  {
+   "parameters": {
+    "method": "POST",
+    "url": "http://localhost:5678/webhook/03ee890d-f155-4b28-af49-d2d72fa92af0",
+    "sendBody": true,
+    "bodyParameters": {
+     "parameters": [
+      {
+       "value": "={   \"name\": \"{{ $('Webhook').item.json.body.name }}\",   \"email\": \"{{ $('Webhook').item.json.body.email }}\",   \"phone\": \"{{ $('Webhook').item.json.body.phone }}\",   \"telegram\": \"{{ $('Webhook').item.json.body.telegram }}\",   \"score\": \"{{ $('Basic LLM Chain').item.json.text.match(/SCORE: (.+)/)?.[1]?.trim() }}\",   \"tier\": \"{{ $('Basic LLM Chain').item.json.text.match(/TIER: (.+)/)?.[1]?.trim() }}\",   \"label\": \"{{ $('Basic LLM Chain').item.json.text.match(/LABEL: (.+)/)?.[1]?.trim() }}\",   \"budget\": \"{{ $('Webhook').item.json.body.budget }}\",   \"location\": \"{{ $('Webhook').item.json.body.location }}\",   \"propertyType\": \"{{ $('Webhook').item.json.body.propertyType }}\",   \"timeline\": \"{{ $('Webhook').item.json.body.timeline }}\",   \"summary\": \"{{ $('Basic LLM Chain').item.json.text.match(/SUMMARY: (.+)/)?.[1]?.trim() }}\",   \"next_action\": \"{{ $('Basic LLM Chain').item.json.text.match(/NEXT_ACTION: (.+)/)?.[1]?.trim() }}\" }"
+      }
+     ]
+    },
+    "options": {}
+   },
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.4,
+   "position": [
+    560,
+    336
+   ],
+   "id": "af3ef338-f04f-4d21-8724-954cb87e3bf6",
+   "name": "HTTP Request"
+  }
+ ],
+ "connections": {
+  "Webhook": {
+   "main": [
+    [
+     {
+      "node": "Basic LLM Chain",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Groq Chat Model": {
+   "ai_languageModel": [
+    [
+     {
+      "node": "Basic LLM Chain",
+      "type": "ai_languageModel",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Basic LLM Chain": {
+   "main": [
+    [
+     {
+      "node": "Append row in sheet",
+      "type": "main",
+      "index": 0
+     },
+     {
+      "node": "Send a message",
+      "type": "main",
+      "index": 0
+     },
+     {
+      "node": "HTTP Request",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Append row in sheet": {
+   "main": [
+    []
+   ]
+  },
+  "Send a message": {
+   "main": [
+    []
+   ]
+  }
+ }
+}

@@ -1,0 +1,150 @@
+{
+ "name": "sales sagent",
+ "nodes": [
+  {
+   "parameters": {
+    "httpMethod": "POST",
+    "path": "03ee890d-f155-4b28-af49-d2d72fa92af0",
+    "options": {}
+   },
+   "type": "n8n-nodes-base.webhook",
+   "typeVersion": 2.1,
+   "position": [
+    -352,
+    64
+   ],
+   "id": "7a30a470-ff83-4a1e-86f1-e9130210f754",
+   "name": "Webhook",
+   "webhookId": "03ee890d-f155-4b28-af49-d2d72fa92af0"
+  },
+  {
+   "parameters": {
+    "promptType": "define",
+    "text": "Write Sophie's opening Telegram message to this lead.\nTheir name is {{ $json.name }}.\n2 sentences only. French only.",
+    "messages": {
+     "messageValues": [
+      {
+       "message": "=You are Sophie, a senior real estate consultant at a prestigious French agency.\nYou are texting a potential client for the first time via Telegram.\n\n═══════════════════════════════\nLEAD PROFILE\n═══════════════════════════════\n- Name: {{ $json.name }}\n- Budget: {{ $json.budget }}\n- Location interest: {{ $json.location }}\n- Project type: {{ $json.propertyType }}\n- Timeline: {{ $json.timeline }}\n- Lead intelligence: {{ $json.summary }}\n═══════════════════════════════\nYOUR PERSONALITY\n═══════════════════════════════\n- Professional and warm — like a competent colleague, not a therapist\n- You are direct and confident\n- You text like a real person — natural and brief\n- You are focused on the project, not their emotions\n\n═══════════════════════════════\nOPENING MESSAGE STRUCTURE\n═══════════════════════════════\nFollow this EXACT structure in 2 sentences:\n\nSENTENCE 1:\n→ Greet them using THEIR name from the lead profile (not your own name)\n→ Introduce yourself as Sophie\n→ Reference ONE concrete detail from their project\n→ Example: \"Bonjour [LEAD NAME], c'est Sophie — j'ai vu votre projet d'achat dans le 16ème.\"\n\nSENTENCE 2:\n→ Ask ONE practical question to move the project forward\n→ Focus on the property itself — neighborhood, must-haves, deal breakers\n→ Example: \"Vous avez déjà des adresses en tête, ou vous êtes encore en phase de découverte ?\"\n\n═══════════════════════════════\nEXAMPLE OF A PERFECT MESSAGE\n═══════════════════════════════\n\"Bonjour Marc, c'est Sophie — j'ai vu que vous cherchez un 3 pièces dans le 16ème avec terrasse. Vous avez déjà des rues ou des adresses en tête, ou vous êtes encore ouvert aux options ?\"\n\n═══════════════════════════════\nSTRICT RULES\n═══════════════════════════════\n- 2 sentences MAXIMUM\n- Use the lead's name in sentence 1, never your own name\n- French only\n- No emojis\n- No emotional questions\n- No \"je me permets\"\n- No \"j'espère que vous allez bien\"\n- Never reveal you are an AI\n- Stay focused on the property project"
+      }
+     ]
+    },
+    "batching": {}
+   },
+   "type": "@n8n/n8n-nodes-langchain.chainLlm",
+   "typeVersion": 1.9,
+   "position": [
+    288,
+    64
+   ],
+   "id": "41fddb06-79d0-4ca3-8424-25d3e399c27c",
+   "name": "Basic LLM Chain"
+  },
+  {
+   "parameters": {
+    "model": "llama-3.3-70b-versatile",
+    "options": {}
+   },
+   "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+   "typeVersion": 1,
+   "position": [
+    288,
+    224
+   ],
+   "id": "a6fb4cbe-ea30-4682-8b6d-6655c21e3245",
+   "name": "Groq Chat Model",
+   "credentials": {
+    "groqApi": {
+     "id": "",
+     "name": "YOUR_GROQAPI"
+    }
+   }
+  },
+  {
+   "parameters": {
+    "method": "POST",
+    "url": "http://localhost:3001/send",
+    "sendBody": true,
+    "bodyParameters": {
+     "parameters": [
+      {
+       "name": "telegram",
+       "value": "={{ $('Code').first().json.telegram }}"
+      },
+      {
+       "name": "message",
+       "value": "={{ $('Basic LLM Chain').item.json.text }}"
+      }
+     ]
+    },
+    "options": {}
+   },
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.4,
+   "position": [
+    592,
+    64
+   ],
+   "id": "0581a78f-e831-4d35-b194-8f6a391a087b",
+   "name": "HTTP Request"
+  },
+  {
+   "parameters": {
+    "jsCode": "const raw = $input.first().json;\nconst jsonString = raw.body[\"\"];\nconst parsed = JSON.parse(jsonString);\nreturn [{ json: parsed }];"
+   },
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    -48,
+    64
+   ],
+   "id": "7dbcc4e1-5414-4036-8a39-e7845cc86ce8",
+   "name": "Code"
+  }
+ ],
+ "connections": {
+  "Webhook": {
+   "main": [
+    [
+     {
+      "node": "Code",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Groq Chat Model": {
+   "ai_languageModel": [
+    [
+     {
+      "node": "Basic LLM Chain",
+      "type": "ai_languageModel",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Basic LLM Chain": {
+   "main": [
+    [
+     {
+      "node": "HTTP Request",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Code": {
+   "main": [
+    [
+     {
+      "node": "Basic LLM Chain",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ }
+}

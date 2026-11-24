@@ -1,0 +1,202 @@
+{
+ "name": "Conversation",
+ "nodes": [
+  {
+   "parameters": {
+    "httpMethod": "POST",
+    "path": "reply",
+    "options": {}
+   },
+   "type": "n8n-nodes-base.webhook",
+   "typeVersion": 2.1,
+   "position": [
+    -192,
+    -160
+   ],
+   "id": "696cb47b-5934-4c65-a446-f419f3124380",
+   "name": "Webhook",
+   "webhookId": "0331a42f-e16b-49a1-8f87-188988224fb1"
+  },
+  {
+   "parameters": {
+    "documentId": {
+     "__rl": true,
+     "value": "YOUR_GOOGLE_SHEET_ID",
+     "mode": "list",
+     "cachedResultName": "Real Estate Leads",
+     "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+    },
+    "sheetName": {
+     "__rl": true,
+     "value": "gid=0",
+     "mode": "list",
+     "cachedResultName": "Sheet1",
+     "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=0"
+    },
+    "filtersUI": {
+     "values": [
+      {
+       "lookupColumn": "Telegram",
+       "lookupValue": "={{ $json.body.telegram }}"
+      }
+     ]
+    },
+    "options": {}
+   },
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.7,
+   "position": [
+    16,
+    -160
+   ],
+   "id": "5e54b5ba-c105-46e1-9592-04e99a9d9719",
+   "name": "Get row(s) in sheet",
+   "credentials": {
+    "googleSheetsOAuth2Api": {
+     "id": "",
+     "name": "YOUR_GOOGLESHEETSOAUTH2API"
+    }
+   }
+  },
+  {
+   "parameters": {
+    "jsCode": "const data = $('Webhook').first().json.body;\nconst history = data.history || [];\n\n// Build a readable transcript\nconst transcript = history.map(h => {\n  const speaker = h.role === 'assistant' ? 'Sophie' : 'Client';\n  return `${speaker}: ${h.message}`;\n}).join('\\n');\n\nreturn [{\n  json: {\n    telegram: data.telegram,\n    latest_message: data.latest_message,\n    transcript: transcript\n  }\n}];"
+   },
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    224,
+    -160
+   ],
+   "id": "67c035ef-bfad-4269-a284-a439e26610a9",
+   "name": "Code in JavaScript"
+  },
+  {
+   "parameters": {
+    "promptType": "define",
+    "text": "=The client just said: \"{{ $json.latest_message }}\"\n\nWrite Sophie's reply.",
+    "messages": {
+     "messageValues": [
+      {
+       "message": "=You are Sophie, a senior real estate consultant at a prestigious agency. You are having an ongoing conversation with a client on Telegram.  ═══════════════════════════════ CLIENT PROFILE ═══════════════════════════════ - Name: {{ $('Get row(s) in sheet').first().json.Name }}\n- Budget: {{ $('Get row(s) in sheet').first().json.Budget }}\n- Location: {{ $('Get row(s) in sheet').first().json.Location }}\n- Type: {{ $('Get row(s) in sheet').first().json.Type }}\n- Timeline: {{ $('Get row(s) in sheet').first().json.Timeline }}\n═══════════════════════════════ CONVERSATION SO FAR ═══════════════════════════════ {{ $json.transcript }}  ═══════════════════════════════ YOUR TASK ═══════════════════════════════ Continue the conversation naturally. Reply to the client's latest message.  RULES: - Match the language the client is using (French or English) - Keep replies short — 1 to 3 sentences, like real texting - Be warm, professional, helpful - Collect missing info naturally (budget, timeline, must-haves) - Move toward booking a viewing or call - Never reveal you are an AI - Never repeat yourself if the client is just saying hello multiple times — acknowledge and move forward"
+      }
+     ]
+    },
+    "batching": {}
+   },
+   "type": "@n8n/n8n-nodes-langchain.chainLlm",
+   "typeVersion": 1.9,
+   "position": [
+    432,
+    -160
+   ],
+   "id": "9453ab2d-a57c-432f-95f0-b394db5a53a4",
+   "name": "Basic LLM Chain"
+  },
+  {
+   "parameters": {
+    "model": "llama-3.3-70b-versatile",
+    "options": {}
+   },
+   "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+   "typeVersion": 1,
+   "position": [
+    368,
+    48
+   ],
+   "id": "d243ab96-ff44-4dce-8ae0-aea7ebafbcef",
+   "name": "Groq Chat Model",
+   "credentials": {
+    "groqApi": {
+     "id": "",
+     "name": "YOUR_GROQAPI"
+    }
+   }
+  },
+  {
+   "parameters": {
+    "method": "POST",
+    "url": "http://localhost:3001/send",
+    "sendBody": true,
+    "bodyParameters": {
+     "parameters": [
+      {
+       "name": "telegram",
+       "value": "={{ $('Code in JavaScript').first().json.telegram }}"
+      },
+      {
+       "name": "message",
+       "value": "={{ $('Basic LLM Chain').first().json.text }}"
+      }
+     ]
+    },
+    "options": {}
+   },
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.4,
+   "position": [
+    679.5546875,
+    -160
+   ],
+   "id": "5104ce18-03c9-4977-a234-2697b2a5c576",
+   "name": "HTTP Request"
+  }
+ ],
+ "connections": {
+  "Webhook": {
+   "main": [
+    [
+     {
+      "node": "Get row(s) in sheet",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Get row(s) in sheet": {
+   "main": [
+    [
+     {
+      "node": "Code in JavaScript",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Code in JavaScript": {
+   "main": [
+    [
+     {
+      "node": "Basic LLM Chain",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Groq Chat Model": {
+   "ai_languageModel": [
+    [
+     {
+      "node": "Basic LLM Chain",
+      "type": "ai_languageModel",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Basic LLM Chain": {
+   "main": [
+    [
+     {
+      "node": "HTTP Request",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ }
+}
