@@ -25,7 +25,7 @@ Lead form (HTML)  ──POST /webhook/lead──▶  n8n workflow  ──POST /s
 
 ## Screenshots
 
-The 3 n8n workflows, shown on the n8n canvas from the exported JSON in `workflows/`.
+The 3 n8n workflows, captured from my n8n editor (the local network address under the HTTP Request nodes is blanked out).
 
 **receptionist**
 
