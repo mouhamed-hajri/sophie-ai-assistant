@@ -669,7 +669,7 @@
       submitBtn.textContent = 'Sending';
 
       try {
-        if (WEBHOOK_URL.startsWith('NGROK_URL_HERE')) {
+        if (WEBHOOK_URL.includes('YOUR-N8N-HOST')) {
           throw new Error('config'); // WEBHOOK_URL hasn't been set yet
         }
 
